@@ -1,7 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
-var solver = new Day2();
+var solver = new Day3();
 
-var input = File.ReadAllText("input/day2", System.Text.Encoding.UTF8);
+var input = File.ReadAllText("input/day3", System.Text.Encoding.UTF8);
 solver.solve(input);
 
 interface Solver {
