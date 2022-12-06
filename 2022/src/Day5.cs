@@ -1,18 +1,5 @@
 class Day5 : Solver
 {
-
-    void printStacks(List<Stack<char>> stacks)
-    {
-        foreach (var stack in stacks)
-        {
-            foreach (var x in stack)
-            {
-                Console.Write(x);
-            }
-            Console.WriteLine();
-        }
-    }
-
     public void solve(string input)
     {
         // Note that we cannot trim the start here
