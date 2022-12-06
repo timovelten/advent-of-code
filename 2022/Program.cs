@@ -1,6 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
-var solver = new Day4();
-var input = File.ReadAllText("input/day4", System.Text.Encoding.UTF8);
+var solver = new Day5();
+var input = File.ReadAllText("input/day5", System.Text.Encoding.UTF8);
 
 solver.solve(input);
 
