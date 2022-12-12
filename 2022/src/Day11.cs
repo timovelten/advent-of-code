@@ -22,7 +22,72 @@ class Day11 : Solver
         }
     }
 
-    static class MonkeyParser
+    public void solve(string input)
+    {
+        // No reasonable person would write a parser for this, but it is what it is
+
+        var monkeys1 = MonkeyParser.Monkey.Many().Parse(input)
+            .ToList();
+
+        var monkeys2 = MonkeyParser.Monkey.Many().Parse(input)
+            .ToList();
+
+        for (var i = 0; i < monkeys1.Count; i++)
+        {
+            if (monkeys1[i].No != i)
+                throw new Exception("order the monkeys correctly");
+        }
+
+        var prob1 = doTheWork(monkeys1, 20, x => x / 3);
+        Console.WriteLine($"Problem 1: {prob1}");
+
+        var mod = monkeys2.Select(m => m.DivisbleBy).Aggregate(1L, (acc, x) => acc * x);
+
+        // Reduction: Note that we could just store the "worriedness level" x in "components"
+        // i.e. we store (x mod 19, x mod 17, x mod 11, ...) and so on. We then apply every operation
+        // to each component and, most importantly, we can see if it is disible by 19 by looking at
+        // the x mod 19 component.
+        // But, assuming the "test divisble by integers" are coprime, we can just do this instead
+        // (chinese remainder theorem).
+        var prob2 = doTheWork(monkeys2, 10000, x => x % mod);
+        Console.WriteLine($"Problem 2: {prob2}");
+    }
+
+    long doTheWork(List<Monkey> monkeys, int rounds, Func<long, long> reduce)
+    {
+        var inspections = Enumerable.Repeat(0L, monkeys.Count).ToList();
+
+        foreach (var _ in Enumerable.Repeat(0, rounds))
+        {
+            for (var i = 0; i < monkeys.Count; i++)
+            {
+                var monkey = monkeys[i];
+
+                var items = monkey.Items;
+                monkey.Items = new List<long>();
+
+                foreach (var item in items)
+                {
+                    var transformed = reduce(monkey.Operation(item));
+                    if (transformed % monkey.DivisbleBy == 0)
+                    {
+                        monkeys[monkey.ThrowsToTrue].Items.Add(transformed);
+                    }
+                    else
+                    {
+                        monkeys[monkey.ThrowsToFalse].Items.Add(transformed);
+                    }
+                }
+
+                inspections[i] += items.Count;
+            }
+        }
+
+        inspections.Sort();
+        return inspections[inspections.Count - 1] * inspections[inspections.Count - 2];
+    }
+
+        static class MonkeyParser
     {
         static Func<long, long> Adder(long y)
         {
@@ -126,70 +191,5 @@ class Day11 : Solver
                 ThrowsToTrue = iftrue,
                 ThrowsToFalse = iffalse
             };
-    }
-
-    public void solve(string input)
-    {
-        // No reasonable person would write a parser for this, but it is what it is
-
-        var monkeys1 = MonkeyParser.Monkey.Many().Parse(input)
-            .ToList();
-
-        var monkeys2 = MonkeyParser.Monkey.Many().Parse(input)
-            .ToList();
-
-        for (var i = 0; i < monkeys1.Count; i++)
-        {
-            if (monkeys1[i].No != i)
-                throw new Exception("order the monkeys correctly");
-        }
-
-        var prob1 = doTheWork(monkeys1, 20, x => x / 3);
-        Console.WriteLine($"Problem 1: {prob1}");
-
-        var mod = monkeys2.Select(m => m.DivisbleBy).Aggregate(1L, (acc, x) => acc * x);
-
-        // Reduction: Note that we could just store the "worriedness level" x in "components"
-        // i.e. we store (x mod 19, x mod 17, x mod 11, ...) and so on. We then apply every operation
-        // to each component and, most importantly, we can see if it is disible by 19 by looking at
-        // the x mod 19 component.
-        // But, assuming the "test divisble by integers" are coprime, we can just do this instead
-        // (chinese remainder theorem).
-        var prob2 = doTheWork(monkeys2, 10000, x => x % mod);
-        Console.WriteLine($"Problem 2: {prob2}");
-    }
-
-    long doTheWork(List<Monkey> monkeys, int rounds, Func<long, long> reduce)
-    {
-        var inspections = Enumerable.Repeat(0L, monkeys.Count).ToList();
-
-        foreach (var _ in Enumerable.Repeat(0, rounds))
-        {
-            for (var i = 0; i < monkeys.Count; i++)
-            {
-                var monkey = monkeys[i];
-
-                var items = monkey.Items;
-                monkey.Items = new List<long>();
-
-                foreach (var item in items)
-                {
-                    var transformed = reduce(monkey.Operation(item));
-                    if (transformed % monkey.DivisbleBy == 0)
-                    {
-                        monkeys[monkey.ThrowsToTrue].Items.Add(transformed);
-                    }
-                    else
-                    {
-                        monkeys[monkey.ThrowsToFalse].Items.Add(transformed);
-                    }
-                }
-
-                inspections[i] += items.Count;
-            }
-        }
-
-        inspections.Sort();
-        return inspections[inspections.Count - 1] * inspections[inspections.Count - 2];
     }
 }
