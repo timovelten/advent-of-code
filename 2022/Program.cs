@@ -9,10 +9,11 @@
     {"day7", new Day7()},
     {"day8", new Day8()},
     {"day9", new Day9()},
-    {"day10", new Day10()}
+    {"day10", new Day10()},
+    {"day11", new Day11()}
 };
 
-foreach (var day in problems.Where(x => x.Value is Day10))
+foreach (var day in problems.Where(x => x.Value is Day11))
 {
     var solver = day.Value;
 
@@ -28,4 +29,14 @@ foreach (var day in problems.Where(x => x.Value is Day10))
 interface Solver
 {
     void solve(String input);
+}
+
+static class StringHelpers {
+    static string TrimPrefix(this string s, string prefix) {
+        if (s.StartsWith(prefix)) {
+            return s.Remove(prefix.Length);
+        }
+
+        throw new Exception($"failed to parse, expected {prefix} got {s}");
+    }
 }
