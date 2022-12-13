@@ -24,13 +24,6 @@ class Day13 : Solver {
             var core = string.Join(',', Inner.Select(x => x.ToString()));
             return $"[{core}]";
         }
-
-        public bool IsDivierPacket() {
-            return Inner.Count == 1
-                && Inner[0] is PacketList l
-                && l.Inner.Count == 1
-                && l.Inner[0] is PacketInt;
-        }
     }
 
     // Returns a < b :<=> cmp(a, b) < 0
@@ -86,17 +79,16 @@ class Day13 : Solver {
 
     public void solve(string input) {
         var packets = PacketWithTrailingWhitespace.Many().Parse(input).ToList();
-        var groups = packets.Count / 2;
 
-        var prob1 = 0;
-        for (var i = 0; i < groups; i++) {
-            var left = packets[2 * i];
-            var right = packets[2 * i + 1];
-
-            if (ComparePackets(left, right) < 0) {
-                prob1 += (i + 1);
-            }
-        }
+        var prob1 = packets.Chunk(2)
+            .Select((xs, i) => {
+                if (ComparePackets(xs[0], xs[1]) < 0) {
+                    return (i + 1);
+                } else {
+                    return 0;
+                }
+            })
+            .Sum();
 
         Console.WriteLine($"Problem 1: {prob1}");
 
