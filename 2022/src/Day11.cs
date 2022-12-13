@@ -1,8 +1,6 @@
 using Sprache;
-class Day11 : Solver
-{
-    class Monkey
-    {
+class Day11 : Solver {
+    class Monkey {
         public int No { get; set; }
 
         public List<long> Items { get; set; }
@@ -15,15 +13,13 @@ class Day11 : Solver
 
         public int ThrowsToFalse { get; set; }
 
-        public Monkey()
-        {
+        public Monkey() {
             this.Operation = x => x;
             this.Items = new List<long>();
         }
     }
 
-    public void solve(string input)
-    {
+    public void solve(string input) {
         // No reasonable person would write a parser for this, but it is what it is
 
         var monkeys1 = MonkeyParser.Monkey.Many().Parse(input)
@@ -32,8 +28,7 @@ class Day11 : Solver
         var monkeys2 = MonkeyParser.Monkey.Many().Parse(input)
             .ToList();
 
-        for (var i = 0; i < monkeys1.Count; i++)
-        {
+        for (var i = 0; i < monkeys1.Count; i++) {
             if (monkeys1[i].No != i)
                 throw new Exception("order the monkeys correctly");
         }
@@ -53,28 +48,22 @@ class Day11 : Solver
         Console.WriteLine($"Problem 2: {prob2}");
     }
 
-    long doTheWork(List<Monkey> monkeys, int rounds, Func<long, long> reduce)
-    {
+    long doTheWork(List<Monkey> monkeys, int rounds, Func<long, long> reduce) {
         var inspections = Enumerable.Repeat(0L, monkeys.Count).ToList();
 
-        foreach (var _ in Enumerable.Repeat(0, rounds))
-        {
-            for (var i = 0; i < monkeys.Count; i++)
-            {
+        foreach (var _ in Enumerable.Repeat(0, rounds)) {
+            for (var i = 0; i < monkeys.Count; i++) {
                 var monkey = monkeys[i];
 
                 var items = monkey.Items;
                 monkey.Items = new List<long>();
 
-                foreach (var item in items)
-                {
+                foreach (var item in items) {
                     var transformed = reduce(monkey.Operation(item));
-                    if (transformed % monkey.DivisbleBy == 0)
-                    {
+                    if (transformed % monkey.DivisbleBy == 0) {
                         monkeys[monkey.ThrowsToTrue].Items.Add(transformed);
                     }
-                    else
-                    {
+                    else {
                         monkeys[monkey.ThrowsToFalse].Items.Add(transformed);
                     }
                 }
@@ -87,20 +76,15 @@ class Day11 : Solver
         return inspections[inspections.Count - 1] * inspections[inspections.Count - 2];
     }
 
-        static class MonkeyParser
-    {
-        static Func<long, long> Adder(long y)
-        {
-            return x =>
-            {
+    static class MonkeyParser {
+        static Func<long, long> Adder(long y) {
+            return x => {
                 return x + y;
             };
         }
 
-        static Func<long, long> Multiplier(long y)
-        {
-            return x =>
-            {
+        static Func<long, long> Multiplier(long y) {
+            return x => {
                 return x * y;
             };
         }
@@ -182,8 +166,7 @@ class Day11 : Solver
             from test in DivisibleBy
             from iftrue in ThrowsToTrue
             from iffalse in ThrowsToFalse
-            select new Monkey
-            {
+            select new Monkey {
                 No = no,
                 Items = starting.ToList(),
                 Operation = operation,

@@ -1,9 +1,6 @@
-class Day1 : Solver
-{
-    public void solve(string input)
-    {
-        var amounts = input.Split("\n\n").Select(block =>
-        {
+class Day1 : Solver {
+    public void solve(string input) {
+        var amounts = input.Split("\n\n").Select(block => {
             return block
                 .Split("\n").Where(x => !String.IsNullOrWhiteSpace(x))
                 .Select(x => long.Parse(x)).Sum();

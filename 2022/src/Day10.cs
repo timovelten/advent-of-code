@@ -1,9 +1,7 @@
 using System.Text;
 
-class Day10 : Solver
-{
-    public void solve(string input)
-    {
+class Day10 : Solver {
+    public void solve(string input) {
         var instructions = input.Trim().Split("\n");
 
         long prob1 = 0;
@@ -18,49 +16,40 @@ class Day10 : Solver
         var pc = 0;
 
         long x = 1;
-        while (pc < instructions.Length)
-        {
+        while (pc < instructions.Length) {
             var inst = instructions[pc];
 
             // Problem 1
-            if (cycle >= 20 && (cycle - 20) % 40 == 0)
-            {
+            if (cycle >= 20 && (cycle - 20) % 40 == 0) {
                 prob1 += cycle * x;
             }
 
             // Problem 2
             var positionInRow = (cycle - 1) % 40;
-            if (Math.Abs(positionInRow - x) <= 1)
-            {
+            if (Math.Abs(positionInRow - x) <= 1) {
                 prob2.Append("#");
             }
-            else
-            {
+            else {
                 prob2.Append(".");
             }
 
-            if (positionInRow == 40 - 1)
-            {
+            if (positionInRow == 40 - 1) {
                 prob2.AppendLine();
             }
 
             // General
-            if (addInNextCycle != null)
-            {
+            if (addInNextCycle != null) {
                 x += (long)addInNextCycle;
                 pc += 1;
                 addInNextCycle = null;
             }
-            else if (inst == "noop")
-            {
+            else if (inst == "noop") {
                 pc += 1;
             }
-            else if (inst.StartsWith("addx"))
-            {
+            else if (inst.StartsWith("addx")) {
                 addInNextCycle = int.Parse(inst.Split(" ")[1]);
             }
-            else
-            {
+            else {
                 throw new Exception("unexpected instruction " + inst);
             }
 

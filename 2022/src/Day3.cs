@@ -1,37 +1,29 @@
-class Day3 : Solver
-{
+class Day3 : Solver {
     const string AlphabetLower = "abcdefghijklmnopqrstuvwxyz";
     const string AlphabetUpper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    int charToPriority(char c)
-    {
-        if (Char.IsLower(c))
-        {
+    int charToPriority(char c) {
+        if (Char.IsLower(c)) {
             return AlphabetLower.IndexOf(c) + 1;
         }
-        else
-        {
+        else {
             return AlphabetUpper.IndexOf(c) + 27;
         }
     }
 
-    public void solve(string input)
-    {
+    public void solve(string input) {
         var prob1 = input
             .Trim()
             .Split("\n")
-            .Select(line =>
-            {
+            .Select(line => {
                 var mid = line.Length / 2;
                 var left = line.Substring(0, mid);
                 var right = line.Substring(mid, mid);
 
                 // The input strings seem really small, does not seem worth it
                 // to create a HashSet for looking up characters
-                foreach (var c in right)
-                {
-                    if (left.Contains(c))
-                    {
+                foreach (var c in right) {
+                    if (left.Contains(c)) {
                         return c;
                     }
                 }
@@ -47,26 +39,21 @@ class Day3 : Solver
             .Trim()
             .Split("\n")
             .Chunk(3)
-            .Select(lines =>
-            {
+            .Select(lines => {
                 var first = true;
                 var set = new HashSet<char>();
 
-                foreach (var line in lines)
-                {
-                    if (first)
-                    {
+                foreach (var line in lines) {
+                    if (first) {
                         set.UnionWith(line);
                         first = false;
                     }
-                    else
-                    {
+                    else {
                         set.IntersectWith(line);
                     }
                 }
 
-                if (set.Count != 1)
-                {
+                if (set.Count != 1) {
                     throw new Exception("set should contain exactly one element as per the problem statement");
                 }
 
