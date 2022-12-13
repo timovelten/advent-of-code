@@ -1,75 +1,75 @@
 class Day7 : Solver {
-    abstract class FS {
+    abstract class BaseFile {
         public String Name { get; private set; }
 
-        private FS(String name) {
+        private protected BaseFile(String name) {
             this.Name = name;
         }
+    }
 
-        public class File : FS {
-            public long Size { get; private set; }
+    class File : BaseFile {
+        public long Size { get; private set; }
 
-            public File(string name, long size) : base(name) {
-                this.Size = size;
-            }
+        public File(string name, long size) : base(name) {
+            this.Size = size;
+        }
+    }
+
+    class Directory : BaseFile {
+        public Directory? Parent { get; private set; }
+
+        Dictionary<String, BaseFile> children = new Dictionary<string, BaseFile>();
+
+        private Directory(String name, Directory? parent) : base(name) {
+            this.Parent = parent;
         }
 
-        public class Directory : FS {
-            public Directory? Parent { get; private set; }
+        public static Directory GetRootDirectory() {
+            return new Directory("", null);
+        }
 
-            Dictionary<String, FS> children = new Dictionary<string, FS>();
+        public void AddFile(String name, long size) {
+            var file = new File(name, size);
+            this.children.Add(name, file);
+        }
 
-            private Directory(String name, Directory? parent) : base(name) {
-                this.Parent = parent;
+        public void AddDir(String name) {
+            var dir = new Directory(name, this);
+            this.children.Add(name, dir);
+        }
+
+        public BaseFile? GetSubdirectory(String name) {
+            if (this.children.ContainsKey(name)) {
+                return this.children[name];
             }
 
-            public static Directory GetRootDirectory() {
-                return new Directory("", null);
-            }
+            return null;
+        }
 
-            public void AddFile(String name, long size) {
-                var file = new File(name, size);
-                this.children.Add(name, file);
-            }
+        public IEnumerable<BaseFile> Children() {
+            return this.children.Values;
+        }
 
-            public void AddDir(String name) {
-                var dir = new Directory(name, this);
-                this.children.Add(name, dir);
-            }
+        public long TotalSize() {
+            long ret = 0;
 
-            public FS? GetSubdirectory(String name) {
-                if (this.children.ContainsKey(name)) {
-                    return this.children[name];
+            foreach (var child in Children()) {
+                if (child is Directory dir) {
+                    ret += dir.TotalSize();
                 }
-
-                return null;
-            }
-
-            public IEnumerable<FS> Children() {
-                return this.children.Values;
-            }
-
-            public long TotalSize() {
-                long ret = 0;
-
-                foreach (var child in Children()) {
-                    if (child is FS.Directory dir) {
-                        ret += dir.TotalSize();
-                    }
-                    else if (child is FS.File f) {
-                        ret += f.Size;
-                    }
+                else if (child is File f) {
+                    ret += f.Size;
                 }
-
-                return ret;
             }
+
+            return ret;
         }
     }
 
 
     public void solve(string input) {
-        FS.Directory root = FS.Directory.GetRootDirectory();
-        FS.Directory cwd = root;
+        Directory root = Directory.GetRootDirectory();
+        Directory cwd = root;
 
         foreach (var commandAndOutput in input.Trim().Split("$ ")) {
             var lines = commandAndOutput.Trim().Split("\n");
@@ -82,7 +82,7 @@ class Day7 : Solver {
                     cwd = cwd.Parent!;
                 }
                 else {
-                    if (cwd.GetSubdirectory(command[1]) is FS.Directory nextDir && nextDir != null) {
+                    if (cwd.GetSubdirectory(command[1]) is Directory nextDir && nextDir != null) {
                         cwd = nextDir;
                     }
                     else {
@@ -111,7 +111,7 @@ class Day7 : Solver {
         Console.WriteLine($"Problem 2: {prob2}");
     }
 
-    long SolveProblem1(FS.Directory dir) {
+    long SolveProblem1(Directory dir) {
         long ret = 0;
         var totalSize = dir.TotalSize();
 
@@ -120,7 +120,7 @@ class Day7 : Solver {
         }
 
         foreach (var child in dir.Children()) {
-            if (child is FS.Directory childDir) {
+            if (child is Directory childDir) {
                 ret += SolveProblem1(childDir);
             }
         }
@@ -128,7 +128,7 @@ class Day7 : Solver {
         return ret;
     }
 
-    long SolveProblem2(long minSize, FS.Directory dir) {
+    long SolveProblem2(long minSize, Directory dir) {
         var best = long.MaxValue;
 
         var totalSize = dir.TotalSize();
@@ -137,7 +137,7 @@ class Day7 : Solver {
         }
 
         foreach (var child in dir.Children()) {
-            if (child is FS.Directory childDir) {
+            if (child is Directory childDir) {
                 best = Math.Min(best, SolveProblem2(minSize, childDir));
             }
         }
