@@ -11,10 +11,11 @@
     {"day9", new Day9()},
     {"day10", new Day10()},
     {"day11", new Day11()},
-    {"day12", new Day12()}
+    {"day12", new Day12()},
+    {"day13", new Day13()}
 };
 
-foreach (var day in problems.Where(x => x.Value is Day12))
+foreach (var day in problems.Where(x => x.Value is Day13))
 {
     var solver = day.Value;
 
