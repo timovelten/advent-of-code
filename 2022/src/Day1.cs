@@ -7,6 +7,9 @@ class Day1 : Solver {
         }).ToList();
 
         Console.WriteLine($"Problem 1: {amounts.Max()}");
+
+        amounts.Sort();
+
         Console.WriteLine($"Problem 2: {amounts.TakeLast(3).Sum()}");
     }
 }
