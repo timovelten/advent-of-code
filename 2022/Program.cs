@@ -17,7 +17,7 @@
     {"day15", new Day15()}
 };
 
-foreach (var day in problems.Where(x => x.Value is Day15))
+foreach (var day in problems)
 {
     var solver = day.Value;
 
