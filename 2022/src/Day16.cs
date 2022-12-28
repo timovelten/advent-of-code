@@ -74,23 +74,37 @@ class Day16 : Solver {
     }
 
     long calc2(int[] pos, long opened, int[] rem, int[] fpm, int i) {
-        long best = rem.Zip(fpm).Select(x => x.First * x.Second).Sum();
+        var n = pos.Length;
+
+        long best = 0;
+        for (int j = 0; j < n; j++) {
+            best += rem[j] * fpm[j];
+        }
 
         foreach (var next in openableGates) {
-            if (IsBitSet(opened, next)) continue;
+            // If next is already opened, just continue
+            if (((opened >> next) & 1) == 1) continue;
 
             var d = dist[(pos[i], next)] + 1;
 
             if (rem[i] > d) {
-                var newPos = (int[])pos.Clone();
-                var newRem = (int[])rem.Clone();
-                var newFpm = (int[])fpm.Clone();
+                var newPos = new int[n];
+                Array.Copy(pos, newPos, n);
+
+                var newRem = new int[n];
+                Array.Copy(rem, newRem, n);
+
+                var newFpm = new int[n];
+                Array.Copy(fpm, newFpm, n);
 
                 newRem[i] -= d;
                 newFpm[i] += rate[next];
                 newPos[i] = next;
 
-                var val = d * fpm[i] + calc2(newPos, SetBit(opened, next), newRem, newFpm, (i + 1) % pos.Length);
+                // This is a key line: We can assume that the two "players" make their "moves"
+                // not completely in paralell, but that they actually take turns (i.e. move
+                // one after the other)
+                var val = d * fpm[i] + calc2(newPos, opened | (1L << next), newRem, newFpm, (i + 1) % pos.Length);
 
                 if (val > best) {
                     best = val;
@@ -111,14 +125,6 @@ class Day16 : Solver {
         public Valve(string name) {
             this.Name = name;
         }
-    }
-
-    static bool IsBitSet(long l, int i) {
-        return ((l >> i) & 1) == 1;
-    }
-
-    static long SetBit(long l, int i) {
-        return l | (1L << i);
     }
 
 
