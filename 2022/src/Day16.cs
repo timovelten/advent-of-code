@@ -4,88 +4,122 @@ class Day16 : Solver {
     List<string> vertices = new List<string>();
     Dictionary<string, int> vertexToIdx = new Dictionary<string, int>();
 
-    Dictionary<int, List<int>> adj = new Dictionary<int, List<int>>();
-    Dictionary<int, int> rate = new Dictionary<int, int>();
 
-    Dictionary<(int, int), int> dist = new Dictionary<(int, int), int>();
-
-    List<int> openableGates = new List<int>();
-
-    long maxFlowPerMinute = 0;
+    List<List<int>> adj = new List<List<int>>();
+    List<int> rate = new List<int>();
+    int[,] dist = new int[0,0];
+    int openableValvesCount;
 
     public void solve(string input) {
-        var parsedSortedValves = input.Trim().Split("\n")
+        var valves = input.Trim().Split("\n")
             .Select(line => ParseLine.Parse(line))
             .ToList();
-        parsedSortedValves.Sort((x, y) => y.Rate.CompareTo(x.Rate));
 
-        vertices = parsedSortedValves.Select(x => x.Name).ToList();
+        // Sort the valves with positive rate to the beginning so that we can iterate over them better
+        valves.Sort((x, y) => y.rate.CompareTo(x.rate));
+        openableValvesCount = valves.Where(x => x.rate > 0).Count();
 
-        for (var i = 0; i < parsedSortedValves.Count; i++) {
-            vertexToIdx[vertices[i]] = i;
-        }
+        if (openableValvesCount > 32) throw new Exception("too many valves with non-zero flow rate");
 
         // Build the various dumb data structures we will need. Note that the
         // vertices in the vertices list are sorted in descending order by flow rate.
-        var start = 0;
-
-        foreach (var v in parsedSortedValves) {
-            var idx = vertexToIdx[v.Name];
-            adj[idx] = v.LeadsTo.Select(x => vertexToIdx[x]).ToList();
-            rate[idx] = v.Rate;
-
-            if (v.Rate > 0) {
-                openableGates.Add(idx);
-            }
-
-            if (v.Name == "AA") start = idx;
-
-            maxFlowPerMinute += v.Rate;
+        vertices = valves.Select(x => x.name).ToList();
+        for (var i = 0; i < valves.Count; i++) {
+            vertexToIdx[vertices[i]] = i;
         }
 
-        // Pre-compute distances between the vertices
-        foreach (var from in adj.Keys) {
-            // Calculate distance between the node "from" and every other node.
-            var queue = new Queue<int>();
-            var visited = new HashSet<int>();
+        var start = 0;
+        for (var i = 0; i < vertices.Count; i++) {
+            var v = valves[i];
+            rate.Insert(i, v.rate);
+            adj.Insert(i, v.leadsTo.Select(x => vertexToIdx[x]).ToList());
 
-            queue.Enqueue(from);
-            visited.Add(from);
-            dist[(from, from)] = 0;
+            if (v.name == "AA") start = i;
+        }
+
+        // Pre-compute distances between the vertices using bfs for every vertex
+        // (Some notes on floyd warshall are at the bottom)
+        dist = new int[vertices.Count,vertices.Count];
+        for (var from = 0; from < vertices.Count; from++) {
+            // Calculate distance between the node "from" and every other node.
+            var queue = new Queue<int>(new int[] { from });
+            var visited = new HashSet<int>() { from };
+            dist[from, from] = 0;
 
             while (queue.Count > 0) {
                 var v = queue.Dequeue();
-
                 foreach (var to in adj[v]) {
                     if (visited.Contains(to)) continue;
 
                     queue.Enqueue(to);
                     visited.Add(to);
-                    dist[(from, to)] = dist[(from, v)] + 1;
+                    dist[from, to] = dist[from, v] + 1;
                 }
             }
         }
 
-        var part1 = calc2(new int[] { start }, 0, new int[] { 30 }, new int[] { 0 }, 0);
+        var part1 = f(start, 0, 30);
         Console.WriteLine($"Problem 1: {part1}");
 
-        var part2 = calc2(new int[] { start, start }, 0, new int[] { 26, 26 }, new int[] { 0, 0 }, 0);
-       Console.WriteLine($"Problem 2: {part2}");
+        var part2 = g1(start, start, 0, 26, 26);
+        Console.WriteLine($"Problem 2: {part2}");
     }
 
-    long calc2(int[] pos, long opened, int[] rem, int[] fpm, int i) {
-        var n = pos.Length;
+    long f(int pos, uint opened, int rem) {
+        if (rem <= 1) return 0;
 
         long best = 0;
-        for (int j = 0; j < n; j++) {
-            best += rem[j] * fpm[j];
+        for (var next = 0; next < openableValvesCount; next++) {
+            if (((opened >> next) & 1) == 1) continue;
+            var newRem = rem - (dist[pos, next] + 1);
+            var val = newRem * rate[next] + f(next, opened | (1u << next), newRem);
+            if (val > best) best = val;
         }
 
-        foreach (var next in openableGates) {
+        return best;
+    }
+
+    long g1(int pos1, int pos2, uint opened, int rem1, int rem2) {
+        if (rem1 <= 1) return f(pos2, opened, rem2);
+
+        long best = 0;
+        for (var next = 0; next < openableValvesCount; next++) {
+            if (((opened >> next) & 1) == 1) continue;
+            var newRem = rem1 - (dist[pos1, next] + 1);
+            if (newRem > 0) {
+                var val = newRem * rate[next] + g2(next, pos2, opened | (1u << next), newRem, rem2);
+                if (val > best) best = val;
+            }
+        }
+
+        return best;
+    }
+
+    long g2(int pos1, int pos2, uint opened, int rem1, int rem2) {
+        if (rem2 <= 1) return f(pos1, opened, rem1);
+
+        long best = 0;
+        for (var next = 0; next < openableValvesCount; next++) {
+            if (((opened >> next) & 1) == 1) continue;
+            var newRem = rem2 - (dist[pos2, next] + 1);
+            if (newRem > 0) {
+                var val = newRem * rate[next] + g1(pos1, next, opened | (1u << next), rem1, newRem);
+                if (val > best) best = val;
+            }
+        }
+
+        return best;
+    }
+
+    long func(int[] pos, long opened, int[] rem, int i) {
+        var n = pos.Length;
+        long best = 0;
+
+        for (var next = 0; next < openableValvesCount; next++) {
             // If next is already opened, just continue
             if (((opened >> next) & 1) == 1) continue;
 
-            var d = dist[(pos[i], next)] + 1;
+            var d = dist[pos[i], next] + 1;
 
             if (rem[i] > d) {
                 var newPos = new int[n];
@@ -94,17 +128,13 @@ class Day16 : Solver {
                 var newRem = new int[n];
                 Array.Copy(rem, newRem, n);
 
-                var newFpm = new int[n];
-                Array.Copy(fpm, newFpm, n);
-
                 newRem[i] -= d;
-                newFpm[i] += rate[next];
                 newPos[i] = next;
 
                 // This is a key line: We can assume that the two "players" make their "moves"
                 // not completely in paralell, but that they actually take turns (i.e. move
                 // one after the other)
-                var val = d * fpm[i] + calc2(newPos, opened | (1L << next), newRem, newFpm, (i + 1) % pos.Length);
+                var val = rate[next] * newRem[i] + func(newPos, opened | (1L << next), newRem, (i + 1) % n);
 
                 if (val > best) {
                     best = val;
@@ -114,19 +144,6 @@ class Day16 : Solver {
 
         return best;
     }
-
-    class Valve {
-        public string Name { get; init; }
-
-        public int Rate { get; init; } = 0;
-
-        public List<string> LeadsTo = new List<string>();
-
-        public Valve(string name) {
-            this.Name = name;
-        }
-    }
-
 
     static readonly Parser<String> ParseValve =
         from ws1 in Parse.WhiteSpace.Many()
@@ -140,7 +157,7 @@ class Day16 : Solver {
             select w
         ).Many();
 
-    static readonly Parser<Valve> ParseLine =
+    static readonly Parser<(string name, int rate, List<string> leadsTo)> ParseLine =
         from _t1 in Parse.String("Valve ")
         from v in ParseValve
         from _t2 in Parse.String("has flow rate=")
@@ -148,8 +165,15 @@ class Day16 : Solver {
         from _t3 in Parse.String("; tunnels lead to valves ")
             .Or(Parse.String("; tunnel leads to valve"))
         from valves in ParseValveList
-        select new Valve(v) {
-            Rate = int.Parse(rate),
-            LeadsTo = valves.ToList()
-        };
+        select (v, int.Parse(rate), valves.ToList());
 }
+
+// The algorithm of Floyd-Warshall is
+// 1. Initialize dist[i, i] = 0, dist[i, j] = edge weight for edges (i, j) and dist[i, j] = infty otherwise
+// 2. Do DP using the subproblems 
+//      compute the shortest path between (i, j) using only vertices {0,...,k - 1}
+//      and possibly i and j themselves
+// where distances are updated using dist[i, j] = min(dist[i, j], dist[i, k] + dist[k, j])
+// (ask the question: can we improve the path using the new vertex k?). When implementing this,
+// take care of the integer overflow...
+// This algorithm is not really faster than using bfs on every vertex tho
