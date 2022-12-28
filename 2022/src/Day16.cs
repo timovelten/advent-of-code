@@ -61,7 +61,7 @@ class Day16 : Solver {
         var part1 = f(start, 0, 30);
         Console.WriteLine($"Problem 1: {part1}");
 
-        var part2 = g1(start, start, 0, 26, 26);
+        var part2 = g(start, start, 0, 26, 26);
         Console.WriteLine($"Problem 2: {part2}");
     }
 
@@ -72,22 +72,8 @@ class Day16 : Solver {
         for (var next = 0; next < openableValvesCount; next++) {
             if (((opened >> next) & 1) == 1) continue;
             var newRem = rem - (dist[pos, next] + 1);
-            var val = newRem * rate[next] + f(next, opened | (1u << next), newRem);
-            if (val > best) best = val;
-        }
-
-        return best;
-    }
-
-    long g1(int pos1, int pos2, uint opened, int rem1, int rem2) {
-        if (rem1 <= 1) return f(pos2, opened, rem2);
-
-        long best = 0;
-        for (var next = 0; next < openableValvesCount; next++) {
-            if (((opened >> next) & 1) == 1) continue;
-            var newRem = rem1 - (dist[pos1, next] + 1);
             if (newRem > 0) {
-                var val = newRem * rate[next] + g2(next, pos2, opened | (1u << next), newRem, rem2);
+                var val = newRem * rate[next] + f(next, opened | (1u << next), newRem);
                 if (val > best) best = val;
             }
         }
@@ -95,15 +81,18 @@ class Day16 : Solver {
         return best;
     }
 
-    long g2(int pos1, int pos2, uint opened, int rem1, int rem2) {
-        if (rem2 <= 1) return f(pos1, opened, rem1);
+    long g(int pos1, int pos2, uint opened, int rem1, int rem2) {
+        if (rem1 <= 1) return f(pos2, opened, rem2);
 
         long best = 0;
         for (var next = 0; next < openableValvesCount; next++) {
             if (((opened >> next) & 1) == 1) continue;
-            var newRem = rem2 - (dist[pos2, next] + 1);
+            var newRem = rem1 - (dist[pos1, next] + 1);
             if (newRem > 0) {
-                var val = newRem * rate[next] + g1(pos1, next, opened | (1u << next), rem1, newRem);
+                // We could implement this with two functions (g1 and g2), but we do the "fancy" way
+                // where we switch around the parameters here (thereby switching the roles of p1 and
+                // p2)
+                var val = newRem * rate[next] + g(pos2, next, opened | (1u << next), rem2, newRem);
                 if (val > best) best = val;
             }
         }
