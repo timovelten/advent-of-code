@@ -111,40 +111,6 @@ class Day16 : Solver {
         return best;
     }
 
-    long func(int[] pos, long opened, int[] rem, int i) {
-        var n = pos.Length;
-        long best = 0;
-
-        for (var next = 0; next < openableValvesCount; next++) {
-            // If next is already opened, just continue
-            if (((opened >> next) & 1) == 1) continue;
-
-            var d = dist[pos[i], next] + 1;
-
-            if (rem[i] > d) {
-                var newPos = new int[n];
-                Array.Copy(pos, newPos, n);
-
-                var newRem = new int[n];
-                Array.Copy(rem, newRem, n);
-
-                newRem[i] -= d;
-                newPos[i] = next;
-
-                // This is a key line: We can assume that the two "players" make their "moves"
-                // not completely in paralell, but that they actually take turns (i.e. move
-                // one after the other)
-                var val = rate[next] * newRem[i] + func(newPos, opened | (1L << next), newRem, (i + 1) % n);
-
-                if (val > best) {
-                    best = val;
-                }
-            }
-        }
-
-        return best;
-    }
-
     static readonly Parser<String> ParseValve =
         from ws1 in Parse.WhiteSpace.Many()
         from valve in Parse.Repeat(Parse.Upper, 2).Text()
