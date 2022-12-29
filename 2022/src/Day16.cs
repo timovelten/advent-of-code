@@ -21,8 +21,6 @@ class Day16 : Solver {
 
         if (openableValvesCount > 32) throw new Exception("too many valves with non-zero flow rate");
 
-        // Build the various dumb data structures we will need. Note that the
-        // vertices in the vertices list are sorted in descending order by flow rate.
         vertices = valves.Select(x => x.name).ToList();
         for (var i = 0; i < valves.Count; i++) {
             vertexToIdx[vertices[i]] = i;
@@ -61,14 +59,21 @@ class Day16 : Solver {
         var part1 = f(start, 0, 30);
         Console.WriteLine($"Problem 1: {part1}");
 
-        var part2 = g(start, start, 0, 26, 26);
+        var part2 = g(start, 0, 26, start, 26);
         Console.WriteLine($"Problem 2: {part2}");
     }
 
-    long f(int pos, uint opened, int rem) {
-        if (rem <= 1) return 0;
+    Dictionary<(int pos, uint opened, int rem), long> cache 
+        = new Dictionary<(int pos, uint opened, int rem), long>();
 
-        long best = 0;
+    long f(int pos, uint opened, int rem) {
+        // This cache works suprisingly well and I have to basically stolen it from the reddit
+        // thread. Shame on me.
+        var cachedValue = cache.GetValueOrDefault((pos, opened, rem), -1L);
+        if (cachedValue >= 0) return cachedValue;
+
+        long best = 0L;
+
         for (var next = 0; next < openableValvesCount; next++) {
             if (((opened >> next) & 1) == 1) continue;
             var newRem = rem - (dist[pos, next] + 1);
@@ -78,26 +83,31 @@ class Day16 : Solver {
             }
         }
 
+        cache[(pos, opened, rem)] = best;
+
         return best;
     }
 
-    long g(int pos1, int pos2, uint opened, int rem1, int rem2) {
-        if (rem1 <= 1) return f(pos2, opened, rem2);
+    long g(int pos, uint opened, int rem, int pos2, int rem2) {
+        long best = -1L;
 
-        long best = 0;
+        // This is literally copy pasted from f (except for the recursive call)
         for (var next = 0; next < openableValvesCount; next++) {
             if (((opened >> next) & 1) == 1) continue;
-            var newRem = rem1 - (dist[pos1, next] + 1);
+            var newRem = rem - (dist[pos, next] + 1);
             if (newRem > 0) {
-                // We could implement this with two functions (g1 and g2), but we do the "fancy" way
-                // where we switch around the parameters here (thereby switching the roles of p1 and
-                // p2)
-                var val = newRem * rate[next] + g(pos2, next, opened | (1u << next), rem2, newRem);
+                var val = newRem * rate[next] + g(next, opened | (1u << next), newRem, pos2, rem2);
                 if (val > best) best = val;
             }
         }
 
-        return best;
+        if (best < 0) {
+            // Let them play one after the other
+            return f(pos2, opened, rem2);
+        } else {
+            // We let them play one after the other, completely separate from each other essentially
+            return best;
+        }
     }
 
     static readonly Parser<String> ParseValve =
