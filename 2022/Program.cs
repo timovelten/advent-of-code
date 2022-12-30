@@ -24,7 +24,8 @@ foreach (var day in problems.Where(x => x.Value is Day18))
 {
     var solver = day.Value;
 
-    var input = File.ReadAllText($"input/{day.Key}", System.Text.Encoding.UTF8);
+    // Make this windows compatible...
+    var input = File.ReadAllText($"input/{day.Key}", System.Text.Encoding.UTF8).Replace("\r\n", "\n");
     var watch = new System.Diagnostics.Stopwatch();
     watch.Start();
     solver.solve(input);
@@ -36,14 +37,4 @@ foreach (var day in problems.Where(x => x.Value is Day18))
 interface Solver
 {
     void solve(String input);
-}
-
-static class StringHelpers {
-    static string TrimPrefix(this string s, string prefix) {
-        if (s.StartsWith(prefix)) {
-            return s.Remove(prefix.Length);
-        }
-
-        throw new Exception($"failed to parse, expected {prefix} got {s}");
-    }
 }
