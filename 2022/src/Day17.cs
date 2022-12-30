@@ -8,17 +8,11 @@ class Day17 : Solver {
     };
 
     List<(int dx, int dy)> jets = new List<(int dx, int dy)>();
-
     HashSet<(int x, int y)> settledRocks = new HashSet<(int x, int y)>();
-
     int rockIndex = 0;
-
     int jetIndex = 0;
-
     int width = 7;
-
     int height = 0;
-
     int bottomRow = 0;
 
     class Rock {
