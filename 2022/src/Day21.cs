@@ -24,15 +24,18 @@ class Day21 : Solver {
         };
     }
 
-    long? SolveForHumn(string name, long eq, Dictionary<string, string> input) {
+    long SolveForHumn(string name, long eq, Dictionary<string, string> input) {
         if (name == "humn") return eq;
         var s = input[name];
 
+        bool failLiteral = false;
+
         try {
-            long.Parse(s);
-            return null;
+            var x = long.Parse(s);
+            failLiteral = x == eq;
         }
         catch (Exception) { }
+        if (failLiteral) throw new Exception("unsatisfiable");
 
         // Is the LHS known?
         var (lhs, op, rhs) = ParseOperation(s);
@@ -65,7 +68,7 @@ class Day21 : Solver {
         }
         catch (Exception) { }
 
-        throw new Exception("bot sides cannot be evaluated");
+        throw new Exception("both sides cannot be evaluated");
     }
 
     public void solve(string inputStr) {
