@@ -115,8 +115,4 @@ class Day20 : Solver {
         Console.WriteLine($"Problem 1: {mix(labels, 1)}");
         Console.WriteLine($"Problem 1: {mix(labels.Select(x => x * 811589153), 10)}");
     }
-
-    static void print<T>(IEnumerable<T> xs) {
-        Console.WriteLine(String.Join(" ", xs.Select(x => x.ToString())));
-    }
 }
