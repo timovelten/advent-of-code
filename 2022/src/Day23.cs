@@ -38,16 +38,14 @@ class Day23 : Solver {
         }
     }
 
-    static (int x, int y)[] NorthDelta = new [] { (-1, -1), (0, -1), (1, -1) };
-    static (int x, int y)[] SouthDelta = new [] { (-1, 1), (0, 1), (1, 1) };
-    static (int x, int y)[] WestDelta = new [] { (-1, -1), (-1, 0), (-1, 1) };
-    static (int x, int y)[] EastDelta = new [] { (1, -1), (1, 0), (1, 1) };
-
     bool simulate(HashSet<(int x, int y)> grid, int round) {
         // Key is from, value is to
         var moveTo = new Dictionary<(int x, int y), (int x, int y)>();
         var proposalCount = new Dictionary<(int x, int y), int>();
         var anyoneMoved = false;
+
+        bool[] free = new bool[4];
+        (int, int)[] deltas = new [] { (0, -1), (0, 1), (-1, 0), (1, 0) };
 
         foreach (var p in grid) {
             var northFree = !(
@@ -64,8 +62,10 @@ class Day23 : Solver {
             );
             var allFree = northFree && southFree && westFree && eastFree;
 
-            bool[] free = new [] { northFree, southFree, westFree, eastFree };
-            (int, int)[] deltas = new [] { (0, -1), (0, 1), (-1, 0), (1, 0) };
+            free[0] = northFree;
+            free[1] = southFree;
+            free[2] = westFree;
+            free[3] = eastFree;
             
             var delta = (0, 0);
             if (!allFree) {
