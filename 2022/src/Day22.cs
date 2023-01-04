@@ -1,11 +1,7 @@
 using Sprache;
 
 class Day22 : Solver {
-    record Instruction {}
-    record StepCount(int x) : Instruction {}
-    record Turn(char c) : Instruction {}
-
-    interface IMoveable {
+    interface IHasMove {
         Position? Move(Position pos);
     }
 
@@ -33,8 +29,8 @@ class Day22 : Solver {
             return this with { x = -y, y = x };
         }
 
-        public Vec3 Neg() {
-            return new Vec3(-x, -y, -z);
+        public static Vec3 operator -(Vec3 a) {
+            return new Vec3(-a.x, -a.y, -a.z);
         }
 
         public Vec3 RotateAbout(Vec3 axis, int times) {
@@ -101,7 +97,7 @@ class Day22 : Solver {
         }
     }
 
-    class Map : IMoveable {
+    class Map : IHasMove {
         public static int OpenTile = 1;
         public static int SolidWall = 2;
 
@@ -179,7 +175,7 @@ class Day22 : Solver {
         }
     }
 
-    class Cube : IMoveable {
+    class Cube : IHasMove {
         private const int TopEdge = 0;
         private const int RightEdge = 1;
         private const int BottomEdge = 2;
@@ -234,18 +230,14 @@ class Day22 : Solver {
 
             // We use a coordinate system like this
             // https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Coord_system_CA_0.svg/1024px-Coord_system_CA_0.svg.png)
-            // If you want a chance to visualise this:
+            // If you want a chance to visualise this (when I say "flattened faces" I mean the puzzle input)
             // 1. First, draw an "up" arrow and an index into the "flattened" face of cube
             // 2. Imagine wrapping that around an actual cube (do this by getting some tape
             //      and literally drawing the arrow onto the side of a rubiks cube)
             
             // In the above coordinate system, the following are the coordinates of the faces (or rather their midpoints)
-            // (1, 0, 0)    font
-            // (0, 0, 1)    top
-            // (-1, 0, 0)   back
-            // (0, 0, -1)   bottom
-            // (0, -1, 0)   left
-            // (0, 1, 0)    right
+            // (1, 0, 0) front, (0, 0, 1) top, (-1, 0, 0) back, 
+            // (0, 0, -1) bottom,(0, -1, 0) left, (0, 1, 0) right
 
             // For each side, we now determine a coordinate system (where the axis might be given
             // the following interpretation: zAxis is "up", yAxis is "right" and the xAxis gives
@@ -263,9 +255,9 @@ class Day22 : Solver {
                     var y = edges[x][j];
                     if (y == -1 || coordSystems[y] != null) continue;
                     var rotateAbout = j switch {
-                        TopEdge => c.yAxis.Neg(),
+                        TopEdge => -c.yAxis,
                         BottomEdge => c.yAxis,
-                        LeftEdge => c.zAxis.Neg(),
+                        LeftEdge => -c.zAxis,
                         RightEdge => c.zAxis,
                         _ => throw new InvalidOperationException()
                     };
@@ -296,9 +288,9 @@ class Day22 : Solver {
                 var c = coordinateSystems[i];
                 for (var j = 0; j < 4; j++) {
                     var rotateAbout = j switch {
-                        TopEdge => c.yAxis.Neg(),
+                        TopEdge => -c.yAxis,
                         BottomEdge => c.yAxis,
-                        LeftEdge => c.zAxis.Neg(),
+                        LeftEdge => -c.zAxis,
                         RightEdge => c.zAxis,
                         _ => throw new InvalidOperationException()
                     };
@@ -317,11 +309,11 @@ class Day22 : Solver {
 
                     if (rotatedUp == otherC.zAxis) {
                         rotation[i][j] = 0;
-                    } else if (rotatedUp == otherC.zAxis.Neg()) {
+                    } else if (rotatedUp == -otherC.zAxis) {
                         rotation[i][j] = 2;
                     } else if (rotatedUp == otherC.yAxis) {
                         rotation[i][j] = 3;
-                    } else if (rotatedUp == otherC.yAxis.Neg()) {
+                    } else if (rotatedUp == -otherC.yAxis) {
                         rotation[i][j] = 1;
                     } else {
                         throw new InvalidOperationException("what the fuck");
@@ -397,7 +389,7 @@ class Day22 : Solver {
         Console.WriteLine($"Problem 2: {prob2}");
     }
 
-    static long f(List<Instruction> instructions, IMoveable map, (int x, int y) start) {
+    static long f(List<Instruction> instructions, IHasMove map, (int x, int y) start) {
         var pos = new Position(start.x, start.y, 1, 0);
         
         foreach (var inst in instructions) {
@@ -433,6 +425,10 @@ class Day22 : Solver {
 
         return (pos.y + 1) * 1000 + 4 * (pos.x + 1) + facing;
     }
+
+    record Instruction {}
+    record StepCount(int x) : Instruction {}
+    record Turn(char c) : Instruction {}
 
     static readonly Parser<Instruction> ParseStepCount = 
         from nos in Parse.Digit.AtLeastOnce().Text()
