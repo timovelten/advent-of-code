@@ -1,7 +1,7 @@
 using Sprache;
 
 class Day22 : Solver {
-    interface IHasMove {
+    interface IMove {
         Position? Move(Position pos);
     }
 
@@ -11,10 +11,6 @@ class Day22 : Solver {
     }
 
     record Vec3(int x, int y, int z) {
-        public static Vec3 XAxis = new Vec3(1, 0, 0);
-        public static Vec3 YAxis = new Vec3(0, 1, 0);
-        public static Vec3 ZAxis = new Vec3(0, 0, 1);
-
         // These rotations are all ccw if the axis points right right into the eye of the observer
 
         public Vec3 RotateAroundX() {
@@ -97,7 +93,7 @@ class Day22 : Solver {
         }
     }
 
-    class Map : IHasMove {
+    class Map : IMove {
         public static int OpenTile = 1;
         public static int SolidWall = 2;
 
@@ -146,23 +142,6 @@ class Day22 : Solver {
             return new Position(nx, ny, dx, dy);
         }
 
-        public void PrintDbg() {
-            int w = xMax[0] - xMin[0] + 1;;
-            for (var y = 0; y < 3 * w; y++) {
-                for (var x = 0; x < 4 * w; x++) {
-                    var val = this[(x, y)];
-                    if (val == 0) {
-                        Console.Write(" ");
-                    } else if (val == Map.OpenTile) {
-                        Console.Write(".");
-                    } else if (val == Map.SolidWall) {
-                        Console.Write("#");
-                    }
-                }
-                Console.WriteLine();
-            }
-        }
-
         public Cube FoldUp() {
             return new Cube(map);
         }
@@ -175,7 +154,7 @@ class Day22 : Solver {
         }
     }
 
-    class Cube : IHasMove {
+    class Cube : IMove {
         private const int TopEdge = 0;
         private const int RightEdge = 1;
         private const int BottomEdge = 2;
@@ -389,7 +368,7 @@ class Day22 : Solver {
         Console.WriteLine($"Problem 2: {prob2}");
     }
 
-    static long f(List<Instruction> instructions, IHasMove map, (int x, int y) start) {
+    static long f(List<Instruction> instructions, IMove map, (int x, int y) start) {
         var pos = new Position(start.x, start.y, 1, 0);
         
         foreach (var inst in instructions) {
