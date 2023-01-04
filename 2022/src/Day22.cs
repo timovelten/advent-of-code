@@ -1,5 +1,4 @@
 using Sprache;
-using System.Numerics;
 
 class Day22 : Solver {
     record Instruction {}
@@ -8,31 +7,6 @@ class Day22 : Solver {
 
     interface IMoveable {
         Position? Move(Position pos);
-    }
-
-    static List<int[]> Product(int i, int rangeStart, int rangeCount, int len, bool permutations) {
-        List<int[]> ret = new List<int[]>();
-        HashSet<int> used = new HashSet<int>();
-        int[] perm = new int[len];
-
-        void f(int i) {
-            if (i >= perm.Length) {
-                ret.Add(perm.ToArray());
-                return;
-            }
-
-            for (var j = rangeStart; j < rangeStart + rangeCount; j++) {
-                if (permutations && used.Contains(j)) continue;
-
-                used.Add(j);
-                perm[i] = j;
-                f(i + 1);
-                used.Remove(j);
-            }
-        }
-
-        f(i);
-        return ret;
     }
 
     static int mod(long x, int m) {
@@ -176,15 +150,10 @@ class Day22 : Solver {
             return new Position(nx, ny, dx, dy);
         }
 
-        public void PrintDbg((int x, int y) mark) {
+        public void PrintDbg() {
             int w = xMax[0] - xMin[0] + 1;;
             for (var y = 0; y < 3 * w; y++) {
                 for (var x = 0; x < 4 * w; x++) {
-                    if (x == mark.x && y == mark.y) {
-                        Console.Write("*");
-                        continue;
-                    }
-
                     var val = this[(x, y)];
                     if (val == 0) {
                         Console.Write(" ");
@@ -312,12 +281,12 @@ class Day22 : Solver {
 
             // xAxis always gives the "real" coordinates of the current face,
             // we need a mapping "real face" to index in the faces list
-            var realFaceToFace = coordSystems
-                .Select((c, i) => new { CoordinateSystem = c, Index = i})
-                .ToDictionary(x => x.CoordinateSystem!.Value.xAxis, x => x.Index);
-
-            if (realFaceToFace.Keys.Count != 6) throw new InvalidOperationException("cannot be folded into a cube");
-
+            var realFaceToFace = new Dictionary<Vec3, int>();
+            for(var i = 0; i < 6; i++) {
+                var c= coordSystems[i];
+                if (c == null) continue;
+                realFaceToFace[c.Value.xAxis] = i;
+            }
             var coordinateSystems = coordSystems.Select(x => x!.Value).ToArray();
 
             // Now that we have an orientation for each face, we can complete the adjacency list
@@ -340,7 +309,6 @@ class Day22 : Solver {
                         edges[i][j] = otherFace;
                     }
 
-                    // Not sure if this can actually happen
                     if (edges[i][j] != otherFace) throw new InvalidOperationException("inconsistent");
                     
                     // Determine rotation
