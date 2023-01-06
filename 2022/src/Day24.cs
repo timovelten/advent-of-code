@@ -1,29 +1,22 @@
 class Day24 : Solver {
+    record Vec2(int x, int y);
+
     class Ground {
         public int Up = 0;
         public int Right = 0;
         public int Down = 0;
         public int Left = 0;
 
-        bool IsOpen() {
+        public bool IsOpen() {
             return Up == 0 && Right == 0 && Down == 0 && Left == 0;
         }
     }
 
-    int width;
-    int height;
-
-    List<Ground[]> simulations = new List<Ground[]>();
-
-    void EnsureEnoughSimulations(int i) {
-        if (i >= simulations.Count) {
-            var count = simulations.Count;
-            var grid = simulations.Last();
-            for (var j = 0; j < simulations.Count; j++) {
-                grid = simulate(grid, width, height);
-                simulations.Add(grid);
-            } 
-        }
+    static IEnumerable<Vec2> AdjacentPositions(Vec2 p) {
+        yield return new Vec2(p.x, p.y + 1);
+        yield return new Vec2(p.x, p.y - 1); 
+        yield return new Vec2(p.x - 1, p.y);
+        yield return new Vec2(p.x + 1, p.y);
     }
 
     static int mod(long x, int m) {
@@ -36,7 +29,6 @@ class Day24 : Solver {
         var width = lines[0].Length - 2;
         var height = lines.Length - 2;
 
-        // Represent open space with Ground and a wall with null
         var grid = new Ground[width * height];
         for (var y = 0; y < height; y++) {
             for (var x = 0; x < width; x++) {
@@ -59,24 +51,75 @@ class Day24 : Solver {
             }
         }
 
-        (int x, int y) pos = (0, -1);
-        
-
-
-        print(grid, width, height);
-
-        for (var i = 0; i < 1_024; i++) {
-            Console.WriteLine("Starting " + i);
-            grid = simulate(grid, width, height);
-        }
-
-
-        (int x, int y) end = (width - 1, height);
-
-
+        Console.WriteLine($"Problem 1: {f(grid, width, true)}");
+        Console.WriteLine($"Problem 1: {f(grid, width, false)}");
     }
 
-    static Ground[] simulate(Ground[] grid, int width, int height) {
+    static long f(Ground[] initialGrid, int width, bool part1) {
+        int height = initialGrid.Length / width;
+        List<Ground[]> simulations = new List<Ground[]>() { initialGrid };
+
+        int finalStage = part1 switch {
+            true => 1,
+            false => 3,
+        };
+
+        var start = new Vec2(0, -1);
+        var end = new Vec2(width - 1, height);
+
+        var queue = new Queue<(int, int, Vec2)>();
+        queue.Enqueue((0, 0, start));
+        var visited = new HashSet<(int, int, Vec2)>() { (0, 0, start) };
+
+        while (queue.Count > 0) {
+            var (i, stage, p) = queue.Dequeue();
+            var pInBounds = 0 <= p.x && p.x < width && 0 <= p.y && p.y < height;
+            EnsureEnoughSimulations(i + 1, simulations, width);
+            var nextGrid = simulations[i + 1];
+
+            var reachedNextStage = ((stage == 0 || stage == 2) && p == end) || (stage == 1 && p == start);
+            if (reachedNextStage) {
+                stage++;
+            };
+
+            if (stage == finalStage) {
+                return i;
+            }
+            
+            foreach (var q in AdjacentPositions(p)) {
+                var qInBounds = 0 <= q.x && q.x < width && 0 <= q.y && q.y < height;
+                if (!qInBounds && q != start && q != end) continue;
+                if (visited.Contains((i + 1, stage, q))) continue;
+                if (qInBounds && !nextGrid[q.x + q.y * width].IsOpen()) continue;
+
+                visited.Add((i + 1, stage, q));
+                queue.Enqueue((i + 1, stage, q));
+            }
+
+            var canStay = (p == start || p == end || (pInBounds && nextGrid[p.x + p.y * width].IsOpen()));
+            if (canStay) {
+                visited.Add((i + 1, stage, p));
+                queue.Enqueue((i + 1, stage, p));
+            }
+        }
+
+        return -1;
+    }
+
+    static void EnsureEnoughSimulations(int i, List<Ground[]> simulations, int width) {
+        if (i >= simulations.Count) {
+            var count = simulations.Count;
+            var grid = simulations.Last();
+            for (var j = 0; j < count; j++) {
+                grid = simulate(grid, width);
+                simulations.Add(grid);
+            } 
+        }
+    }
+
+    static Ground[] simulate(Ground[] grid, int width) {
+        int height = grid.Length / width;
+
         // The copy is hard to avoid, because we have to avoid reading the changes we make here later
         var ret = new Ground[grid.Length];
         for (var i = 0; i < grid.Length; i++) ret[i] = new Ground();
