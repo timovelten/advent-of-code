@@ -252,12 +252,6 @@ class Day22 : Solver {
 
             // xAxis always gives the "real" coordinates of the current face,
             // we need a mapping "real face" to index in the faces list
-            var realFaceToFace = new Dictionary<Vec3, int>();
-            for(var i = 0; i < 6; i++) {
-                var c= coordSystems[i];
-                if (c == null) continue;
-                realFaceToFace[c.Value.xAxis] = i;
-            }
             var coordinateSystems = coordSystems.Select(x => x!.Value).ToArray();
 
             // Now that we have an orientation for each face, we can complete the adjacency list
@@ -274,17 +268,20 @@ class Day22 : Solver {
                         _ => throw new InvalidOperationException()
                     };
 
-                    int otherFace = realFaceToFace[c.xAxis.RotateAbout(rotateAbout, 1)];
+                    // This is fast because that array has only 6 elements
+                    var otherFace = c.xAxis.RotateAbout(rotateAbout, 1);
+                    var otherFaceIdx = Enumerable.Range(0, 6)
+                        .First(j => coordinateSystems[j].xAxis == otherFace);
 
                     if (edges[i][j] == -1) {
-                        edges[i][j] = otherFace;
+                        edges[i][j] = otherFaceIdx;
                     }
 
-                    if (edges[i][j] != otherFace) throw new InvalidOperationException("inconsistent");
+                    if (edges[i][j] != otherFaceIdx) throw new InvalidOperationException("inconsistent");
                     
                     // Determine rotation
                     var rotatedUp = c.zAxis.RotateAbout(rotateAbout, 1);
-                    var otherC = coordinateSystems[otherFace];
+                    var otherC = coordinateSystems[otherFaceIdx];
 
                     if (rotatedUp == otherC.zAxis) {
                         rotation[i][j] = 0;
@@ -381,8 +378,6 @@ class Day22 : Solver {
                     pos = pos.TurnCw();
                 }
             } else if (inst is StepCount s) {
-                // Note how we have to reverse up and down because of how our y grows downward,
-                // but in "regular mathematics", y grows upwards.
                 var remaining = s.x;
                 while (remaining > 0) {
                     Position? nextPos = map.Move(pos);
