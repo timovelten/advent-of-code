@@ -176,25 +176,20 @@ class Day22 : Solver {
                 rotation[i] = new int[] { -1, -1, -1, -1 };
             }
 
-            // Determine width and a sort of tile map
-            var xMax = points.Keys.Select(x => x.x).Max();
-            for (var i = 1; i < 6; i++) {
-                faces.Clear();
-                if ((xMax + 1) % i != 0) continue;
-                this.width = (xMax + 1) / i;
+            // I used to do something kind of dumb here (which still worked though)
+            // This is smarter. The number of points can be interpreted as area, and area
+            // is equal to 6 * w^2, where w is the edge width.
+            this.width =  Convert.ToInt32(Math.Sqrt(points.Count / 6));
 
-                for (var y = 0; y < 4; y++) {
-                    for (var x = 0; x < 4; x++) {
-                        if (points.GetValueOrDefault((x * this.width, y * this.width), 0) != 0) {
-                            faces.Add((x * width, y * width));
-                        }
+            // Find "starting points" for each face
+            for (var y = 0; y < 5; y++) {
+                for (var x = 0; x < 5; x++) {
+                    if (points.GetValueOrDefault((x * this.width, y * this.width), 0) != 0) {
+                        faces.Add((x * width, y * width));
                     }
                 }
-
-                if (faces.Count == 6) {
-                    break;
-                }
             }
+            
             if (faces.Count != 6) throw new InvalidOperationException("could not identify 6 faces");
 
             // Build the (partial) adjacency list
