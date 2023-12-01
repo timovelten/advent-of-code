@@ -18,8 +18,13 @@ pub fn solve() -> crate::Result<()> {
         }
 
         // Part 2
+        // To find the "last digit" one CANNOT just greedily consume a character when its found,
+        // and then move on to the next (skipping the already "consumed" characters). Consider the
+        // following example
+        // 326sevenfivenseven1kctgmnqtwonefq
         let first_digit = first_digit(line);
         let last_digit = last_digit(line);
+
         if let (Some(a), Some(b)) = (first_digit, last_digit) {
             part2 += a as u64 * 10 + b as u64;
         }
