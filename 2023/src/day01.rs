@@ -37,11 +37,11 @@ pub fn solve() -> crate::Result<()> {
 }
 
 fn parse_digit_suffix(s: &str) -> Option<u8> {
-    if s.len() == 0 {
+    if s.is_empty() {
         return None;
     }
 
-    const DIGITS: [(u8, &'static str); 9] = [
+    const DIGITS: [(u8, &str); 9] = [
         (1, "one"),
         (2, "two"),
         (3, "three"),

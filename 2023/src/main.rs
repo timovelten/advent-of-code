@@ -2,10 +2,16 @@ use std::{io, num::ParseIntError};
 
 mod day01;
 mod day02;
+mod day03;
 
 fn main() -> crate::Result<()> {
-    const ONLY_DAY: Option<usize> = Some(2);
-    let solvers = [day01::solve, day02::solve];
+    const ONLY_DAY: Option<usize> = None;
+    #[rustfmt::skip]
+    let solvers = [
+        day01::solve, 
+        day02::solve,
+        day03::solve
+    ];
 
     for (i, solver) in solvers.into_iter().enumerate() {
         let day = i + 1;
@@ -15,7 +21,7 @@ fn main() -> crate::Result<()> {
         println!("Day {}", day);
 
         let now = std::time::Instant::now();
-        let _ = solver()?;
+        solver()?;
         let took = now.elapsed();
 
         println!("Took {} ms ({} ns)", took.as_millis(), took.as_nanos());
