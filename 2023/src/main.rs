@@ -3,6 +3,7 @@ use std::{io, num::ParseIntError};
 mod day01;
 mod day02;
 mod day03;
+mod day04;
 
 fn main() -> crate::Result<()> {
     const ONLY_DAY: Option<usize> = None;
@@ -10,7 +11,8 @@ fn main() -> crate::Result<()> {
     let solvers = [
         day01::solve, 
         day02::solve,
-        day03::solve
+        day03::solve,
+        day04::solve
     ];
 
     for (i, solver) in solvers.into_iter().enumerate() {
