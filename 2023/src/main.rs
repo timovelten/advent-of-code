@@ -5,6 +5,7 @@ mod day02;
 mod day03;
 mod day04;
 mod day05;
+mod day06;
 
 fn main() -> crate::Result<()> {
     const ONLY_DAY: Option<usize> = Some(5);
@@ -14,7 +15,8 @@ fn main() -> crate::Result<()> {
         day02::solve,
         day03::solve,
         day04::solve,
-        day05::solve
+        day05::solve,
+        day06::solve
     ];
 
     for (i, solver) in solvers.into_iter().enumerate() {
