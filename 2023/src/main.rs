@@ -10,7 +10,7 @@ mod day07;
 mod day08;
 
 fn main() -> crate::Result<()> {
-    const ONLY_DAY: Option<usize> = Some(7);
+    const ONLY_DAY: Option<usize> = Some(8);
     #[rustfmt::skip]
     let solvers = [
         day01::solve, 
