@@ -27,10 +27,11 @@ fn solve_impl(input: &str) -> (i64, i64) {
         .sum();
 
     hands.sort_by_cached_key(|(a, _)| {
-        let best_type = determine_best_possible_type(a);
+        // Note that parse_hand maps J to 11
+        let best_type = determine_best_possible_type(a, 11);
         let mut tie_breaker = [None; 5];
         for i in 0..5 {
-            if a[i] != Card::J {
+            if a[i] != 11 {
                 tie_breaker[i] = Some(a[i]);
             }
         }
@@ -47,11 +48,26 @@ fn solve_impl(input: &str) -> (i64, i64) {
     (part1, part2)
 }
 
-fn parse_hand(s: &str) -> [Card; 5] {
-    let mut ret = [Card::No2; 5];
+fn parse_hand(s: &str) -> [i8; 5] {
+    let mut ret = [0; 5];
     let mut len = 0;
     for (i, c) in s.chars().enumerate() {
-        ret[i] = Card::from_char(c);
+        ret[i] = match c {
+            '2' => 2,
+            '3' => 3,
+            '4' => 4,
+            '5' => 5,
+            '6' => 6,
+            '7' => 7,
+            '8' => 8,
+            '9' => 9,
+            'T' => 10,
+            'J' => 11,
+            'Q' => 12,
+            'K' => 13,
+            'A' => 14,
+            _ => panic!("Cant interpret {c} as card")
+        };
         len += 1;
     }
     assert_eq!(len, 5);
@@ -103,14 +119,14 @@ fn determine_hand_type<T: Ord + Clone>(hand: &[T; 5]) -> HandType {
     }
 }
 
-fn determine_best_possible_type(hand: &[Card; 5]) -> HandType  {
+fn determine_best_possible_type<T: Ord + Clone>(hand: &[T; 5], joker: T) -> HandType  {
     // Observation: The actual cards do not matter for the type. Therefore, to simplify,
     // we convert the given cards into internal cards that are just 5 integers (each of which
     // lies in the range -1, 0, 1, 2, 3)
     let mut internal_hand = [-1i8; 5];
     let mut card_numbers = Vec::new();
     for (i, card) in hand.iter().enumerate() {
-        if *card == Card::J {
+        if card == &joker {
             internal_hand[i] = -1;
         } else if let Some(j) = card_numbers.iter().copied().position(|x| x == card) {
             internal_hand[i] = j as i8;
@@ -152,44 +168,6 @@ enum HandType {
     FiveOfAKind
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-enum Card {
-    No2,
-    No3,
-    No4,
-    No5,
-    No6,
-    No7,
-    No8,
-    No9,
-    T,
-    J,
-    Q,
-    K,
-    A
-}
-
-impl Card {
-    fn from_char(c: char) -> Self {
-        match c {
-            '2' => Self::No2,
-            '3' => Self::No3,
-            '4' => Self::No4,
-            '5' => Self::No5,
-            '6' => Self::No6,
-            '7' => Self::No7,
-            '8' => Self::No8,
-            '9' => Self::No9,
-            'T' => Self::T,
-            'J' => Self::J,
-            'Q' => Self::Q,
-            'K' => Self::K,
-            'A' => Self::A,
-            _ => panic!("Cant interpret {c} as card")
-        }
-    }
-}
-
 #[test]
 fn hand_types() {
     assert_eq!(determine_hand_type(&parse_hand("32T3K")), HandType::OnePair);
@@ -202,15 +180,15 @@ fn hand_types() {
 #[test]
 fn best_possible_hand_types() {
     assert_eq!(
-        determine_best_possible_type(&parse_hand("T55J5")),
+        determine_best_possible_type(&parse_hand("T55J5"), 11),
         HandType::FourOfAKind
     );
     assert_eq!(
-        determine_best_possible_type(&parse_hand("T55J5")),
+        determine_best_possible_type(&parse_hand("T55J5"), 11),
         HandType::FourOfAKind
     );
     assert_eq!(
-        determine_best_possible_type(&parse_hand("T55J5")),
+        determine_best_possible_type(&parse_hand("T55J5"), 11),
         HandType::FourOfAKind
     );
 }
