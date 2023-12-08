@@ -18,7 +18,7 @@ fn solve_impl(input: &str) -> (i64, i64) {
         hands.push((hand, bid));
     }
 
-    hands.sort_by_cached_key(|(a, _)| (determine_hand_type(a), a.clone()));
+    hands.sort_by_cached_key(|(a, _)| (determine_hand_type(a), *a));
 
     let part1 = hands.iter()
         .copied()
@@ -101,8 +101,6 @@ fn determine_hand_type<T: Ord + Clone>(hand: &[T; 5]) -> HandType {
         } else {
             HandType::FullHouse
         }
-    } else if distinct == 2 {
-        HandType::FourOfAKind
     } else if distinct == 3 {
         // Can either be three of a kind or two pair
         if longest_run == 3 {
@@ -142,7 +140,7 @@ fn determine_best_possible_type<T: Ord + Clone>(hand: &[T; 5], joker: T) -> Hand
             None => return determine_hand_type(hand)
         };
 
-        let mut new_hand = hand.clone();
+        let mut new_hand = *hand;
         let mut result = None;
         for new in 0..=3 {
             new_hand[placeholder_position] = new;
