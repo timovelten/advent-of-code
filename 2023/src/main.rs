@@ -8,9 +8,10 @@ mod day05;
 mod day06;
 mod day07;
 mod day08;
+mod day09;
 
 fn main() -> crate::Result<()> {
-    const ONLY_DAY: Option<usize> = Some(8);
+    const ONLY_DAY: Option<usize> = Some(9);
     #[rustfmt::skip]
     let solvers = [
         day01::solve, 
@@ -20,7 +21,8 @@ fn main() -> crate::Result<()> {
         day05::solve,
         day06::solve,
         day07::solve,
-        day08::solve
+        day08::solve,
+        day09::solve
     ];
 
     for (i, solver) in solvers.into_iter().enumerate() {
