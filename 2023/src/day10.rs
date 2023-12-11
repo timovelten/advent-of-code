@@ -1,12 +1,65 @@
-use std::collections::{vec_deque, VecDeque};
-
+use std::collections::VecDeque;
 use ahash::{HashMap, HashSet};
+
+#[cfg(test)]
 use indoc::indoc;
 
 const INPUT: &str = include_str!("../input/day10.txt");
 
 // IDEA FOR TOMOROW: Go in "half steps" and check if there is a "half spot" between pipes. It is annoying, but will probably
 // work. 
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+struct HalfPoint {
+    x: i32,
+    y: i32
+}
+
+impl std::fmt::Debug for HalfPoint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({:?}, {:?})", self.x as f64 / 2.0, self.y as f64 / 2.0)
+    }
+}
+
+impl HalfPoint {
+    fn from_whole(x: i32, y: i32) -> Self {
+        Self { x: 2 * x, y: 2 * y }
+    }
+    
+    fn translate(self, x: i32, y: i32) -> Self {
+        Self { x: self.x + 2 * x, y: self.y + 2 * y }
+    }
+
+    fn whole_neighbors(self) -> [HalfPoint; 4] {
+        [
+            self.translate(1, 0),
+            self.translate(-1, 0),
+            self.translate(0, 1),
+            self.translate(0, -1)
+        ]
+    }
+
+    fn fractional_neighbors(self) -> [HalfPoint; 4] {
+        [
+            self.translate_fractional(1, 0),
+            self.translate_fractional(-1, 0),
+            self.translate_fractional(0, 1),
+            self.translate_fractional(0, -1),
+        ]
+    }
+
+    fn translate_fractional(self, x: i32, y: i32) -> Self {
+        Self { x: self.x + x, y: self.y + y }
+    }
+
+    fn is_whole(self) -> bool {
+        self.x % 2 == 0 && self.y % 2 == 0
+    }
+
+    fn midpoint(self, other: HalfPoint) -> Self {
+        Self { x: (self.x + other.x) / 2, y: (self.y + other.y) / 2 }
+    }
+}
 
 pub fn solve() -> crate::Result<()> {
     let grid = Grid::parse(INPUT).unwrap();
@@ -19,31 +72,21 @@ pub fn solve() -> crate::Result<()> {
 }
 
 fn solve_impl(grid: &Grid) -> (usize, usize) {
-    let loop_in_grid = grid.find_loop().unwrap();
-    let part1 = loop_in_grid.len() / 2;
+    let boundary = grid.find_loop().unwrap();
+    let part1 = boundary.len() / 2;
+
+    let filled_in_boundary = Grid::fill_in_circle(&boundary);
 
     let outside_tiles = grid.outside_tiles(
-        loop_in_grid.iter().copied().collect(),
-        (-1, -1),
-        (-1, -1),
-        (grid.width + 2, grid.height + 2),
+        filled_in_boundary.iter().copied().collect(),
+        HalfPoint { x: -1, y: -1 },
+        grid.width,
+        grid.height
     );
 
-    for y in -1..(grid.height + 1) {
-        for x in -1..(grid.width + 1) {
-            if outside_tiles.contains(&(x, y)) {
-                print!("x");
-            } else {
-                print!(" ");
-            }
-        }
-        println!();
-    }
-
-    // Observe: all-tiles = outside-tiles + inside-tiles + loop-tiles
-    let part2 = (grid.width + 2) as usize * (grid.height + 2) as usize 
-            - loop_in_grid.len()
-            - outside_tiles.len();
+    let part2 = grid.width as usize * grid.height as usize
+        - outside_tiles
+        - boundary.len();
 
     (part1, part2)
 }
@@ -51,8 +94,8 @@ fn solve_impl(grid: &Grid) -> (usize, usize) {
 struct Grid {
     width: i32,
     height: i32,
-    tiles: HashMap<(i32, i32), Tile>,
-    start: (i32, i32),
+    tiles: HashMap<HalfPoint, Tile>,
+    start: HalfPoint,
 }
 
 impl Grid {
@@ -71,13 +114,13 @@ impl Grid {
 
                 w += 1;
                 let tile = Tile::from(c)?;
-                tiles.insert((x, y), tile);
+                tiles.insert(HalfPoint::from_whole(x, y), tile);
 
                 if tile == Tile::Start {
                     if start.is_some() {
                         return Err("multiple start points".into());
                     }
-                    start = Some((x, y));
+                    start = Some(HalfPoint::from_whole(x, y));
                 }
             }
 
@@ -96,57 +139,12 @@ impl Grid {
         })
     }
 
-    fn blow_up(&self) -> Self {
-        let mut tiles: HashMap<(i32, i32), Tile> = HashMap::default();
-        let width = self.width * 2;
-        let height = self.height * 2;
-        let mut tiles = HashMap::default();
-
-        for y in 0..height {
-            for x in 0..width {
-                if let Some(&tile) = self.tiles.get(&(x, y)) {
-                    // a b
-                    // c d
-                    let (a, b) = ((2 * x, 2 * y), (2 * x + 1, 2 * y));
-                    let (c, d) = ((2 * x, 2 * y + 1), (2 * x + 1, 2 * y + 1));
-                    
-                    tiles.insert(a, tile);
-                    match tile {
-                        Tile::Vertical => {
-                            tiles.insert(c, Tile::Vertical);
-                        },
-                        Tile::Horizontal => {
-                            tiles.insert(b, Tile::Horizontal);
-                        },
-                        Tile::SouthWest => {
-                            tiles.insert(c, Tile::Vertical);
-                        },
-                        Tile::SouthEast => {
-                            tiles.insert(c, Tile::Vertical);
-                            tiles.insert(b, Tile::Horizontal);
-                        },
-                        Tile::NorthEast => {
-                            tiles.insert(b, Tile::Horizontal);
-                        }
-                        Tile::NorthWest => {},
-                        _ => {}
-                    }
-                }
-            }
-        }
-
-
-        Self {
-            width, height, tiles, start: (self.start.0 * 2, self.start.1 * 2)
-        }
-    }
-
-    fn find_loop(&self) -> Option<Vec<(i32, i32)>> {
+    fn find_loop(&self) -> Option<Vec<HalfPoint>> {
         fn recurse(
             grid: &Grid,
-            pos: (i32, i32),
-            prev: (i32, i32),
-            out: &mut Vec<(i32, i32)>,
+            pos: HalfPoint,
+            prev: HalfPoint,
+            out: &mut Vec<HalfPoint>,
         ) -> Option<()> {
             out.push(pos);
 
@@ -166,13 +164,13 @@ impl Grid {
 
         // We have to try up to three directions potentially...But try all four
         // just to be safe
-        for (dx, dy) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
+        for neighbor in self.start.whole_neighbors() {
             let mut out = vec![self.start];
             let res = recurse(
                 self,
-                (self.start.0 + dx, self.start.1 + dy),
+                neighbor,
                 self.start,
-                &mut out,
+                &mut out
             );
 
             if res.is_some() {
@@ -183,36 +181,57 @@ impl Grid {
         None
     }
 
+    fn fill_in_circle(circle: &Vec<HalfPoint>) -> Vec<HalfPoint> {
+        // On a regular path with n vertices, there are n - 1 spaces to fill.
+        let mut ret = Vec::new();
+        let n = circle.len();
+        for i in 0..n {
+            let current = circle[i % n];
+            let next = circle[(i + 1) % n];
+            let midpoint = current.midpoint(next);
+
+            ret.push(current);
+            ret.push(midpoint);
+        }
+
+        ret
+    }
+
     fn outside_tiles(
         &self,
-        boundary: HashSet<(i32, i32)>,
-        pos: (i32, i32),
-        (min_x, min_y): (i32, i32),
-        (width, height): (i32, i32),
-    ) -> HashSet<(i32, i32)> {
+        boundary: HashSet<HalfPoint>,
+        pos: HalfPoint,
+        width: i32,
+        height: i32
+    ) -> usize {        
+        let mut count = 0;
+        
         let mut queue = VecDeque::new();
         let mut visited = HashSet::default();
         queue.push_front(pos);
         visited.insert(pos);
         
-        while let Some((x, y)) = queue.pop_back() {
-            for (dx, dy) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
-                let (nx, ny) = (x + dx, y + dy);
-                let inbounds = min_x <= nx 
-                    && nx < min_x + width 
-                    && min_y <= ny 
-                    && ny < min_y + height;
-                let newpos = (nx, ny);
-                if visited.contains(&newpos) || boundary.contains(&newpos) || !inbounds {
+        while let Some(point) = queue.pop_back() {
+            if point.is_whole() {
+                count += 1;
+            }
+            
+            for neighbor in point.fractional_neighbors() {
+                let in_bounds_x = pos.x <= neighbor.x && neighbor.x - pos.x < 2 * width + 1;
+                let in_bounds_y = pos.y <= neighbor.y && neighbor.y - pos.y < 2 * height + 1;
+                if visited.contains(&neighbor) || boundary.contains(&neighbor) {
+                    continue;
+                }
+                if !in_bounds_x || !in_bounds_y {
                     continue;
                 }
 
-                queue.push_front(newpos);
-                visited.insert(newpos);
+                queue.push_front(neighbor);
+                visited.insert(neighbor);
             }
         }
 
-        visited
+        count
     }
 }
 
@@ -245,14 +264,14 @@ impl Tile {
         Ok(res)
     }
 
-    fn adjacent_at(&self, (x, y): (i32, i32)) -> Option<[(i32, i32); 2]> {
+    fn adjacent_at(&self, pos: HalfPoint) -> Option<[HalfPoint; 2]> {
         let res = match self {
-            Self::Vertical => [(x, y + 1), (x, y - 1)],
-            Self::Horizontal => [(x + 1, y), (x - 1, y)],
-            Self::NorthEast => [(x, y - 1), (x + 1, y)],
-            Self::NorthWest => [(x, y - 1), (x - 1, y)],
-            Self::SouthWest => [(x - 1, y), (x, y + 1)],
-            Self::SouthEast => [(x + 1, y), (x, y + 1)],
+            Self::Vertical => [pos.translate(0, 1), pos.translate(0, -1)],
+            Self::Horizontal => [pos.translate(1, 0), pos.translate(-1, 0)],
+            Self::NorthEast => [pos.translate(0, -1), pos.translate(1, 0)],
+            Self::NorthWest => [pos.translate(0, -1), pos.translate(-1, 0)],
+            Self::SouthWest => [pos.translate(-1, 0), pos.translate(0, 1)],
+            Self::SouthEast => [pos.translate(1, 0), pos.translate(0, 1)],
             _ => return None,
         };
 
@@ -272,27 +291,6 @@ impl std::fmt::Display for Tile {
             Self::Ground => write!(f, "·"),
             Self::Start => write!(f, "S"),
         }
-    }
-}
-
-impl std::fmt::Display for Grid {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, " ")?;
-        for x in 0..self.width {
-            write!(f, "{}", x % 10)?;
-        }
-        write!(f, "\n")?;
-
-        for y in 0..self.height {
-            write!(f, "{}", y % 10)?;
-            for x in 0..self.width {
-                let tile = self.tiles.get(&(x, y)).copied().unwrap_or(Tile::Ground);
-                write!(f, "{tile}")?;
-            }
-            write!(f, "\n")?;
-        }
-
-        Ok(())
     }
 }
 
@@ -377,7 +375,6 @@ fn example5() {
         ..........            
     "};
     let grid = Grid::parse(example).unwrap();
-    // let grid = grid.blow_up();
-    println!("{}", grid);
-    panic!();
+    let (_, part2) = solve_impl(&grid);
+    assert_eq!(part2, 4);
 }
