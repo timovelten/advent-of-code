@@ -9,9 +9,11 @@ mod day06;
 mod day07;
 mod day08;
 mod day09;
+mod day10;
+mod day11;
 
 fn main() -> crate::Result<()> {
-    const ONLY_DAY: Option<usize> = Some(9);
+    const ONLY_DAY: Option<usize> = Some(11);
     #[rustfmt::skip]
     let solvers = [
         day01::solve, 
@@ -22,7 +24,9 @@ fn main() -> crate::Result<()> {
         day06::solve,
         day07::solve,
         day08::solve,
-        day09::solve
+        day09::solve,
+        day10::solve,
+        day11::solve
     ];
 
     for (i, solver) in solvers.into_iter().enumerate() {
@@ -78,5 +82,11 @@ impl From<ParseIntError> for Error {
 impl<'a> From<&'a str> for Error {
     fn from(value: &'a str) -> Self {
         Self::Message(value.to_owned())
+    }
+}
+
+impl From<String> for Error {
+    fn from(value: String) -> Self {
+        Self::Message(value)
     }
 }
