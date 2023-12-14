@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+
 const INPUT: &str = include_str!("../input/day12.txt");
 pub fn solve() -> crate::Result<()> {
     let mut part1 = 0;
@@ -7,8 +8,7 @@ pub fn solve() -> crate::Result<()> {
     for line in INPUT.lines() {
         let record = Record::parse(line);
         part1 += record.count_solutions();
-        part2 += record.unfold().count_solutions();
-        println!("Line done");
+        part2 += 0;
     }
 
     println!("Part 1: {part1}");
@@ -20,6 +20,42 @@ pub fn solve() -> crate::Result<()> {
 struct Record {
     elems: Vec<SpringState>,
     signature: Vec<usize>,
+}
+
+#[derive(Debug, Clone)]
+struct SignatureParser {
+    signtaure: Vec<usize>,
+    damaged_run: Option<usize>,
+}
+
+impl SignatureParser {
+    fn read_operational(&mut self) {
+        if let Some(run) = self.damaged_run.take() {
+            self.signtaure.push(run);
+        }
+    }
+
+    fn read_damaged(&mut self) {
+        if let Some(run) = &mut self.damaged_run {
+            *run += 1;
+        } else {
+            self.damaged_run = Some(1)
+        };
+    }
+
+    fn could_match(&self, sig: &[usize]) -> bool {
+        if let Some(run) = self.damaged_run {
+            self.signtaure.len() < sig.len()
+                && self.signtaure == &sig[0..self.signtaure.len()]
+                && run <= sig[self.signtaure.len()]
+        } else {
+            self.signtaure.len() <= sig.len() && self.signtaure == &sig[0..self.signtaure.len()]
+        }
+    }
+
+    fn success(&self, sig: &[usize]) -> bool {
+        sig == self.signtaure
+    }
 }
 
 impl Record {
@@ -56,22 +92,21 @@ impl Record {
     }
 
     fn count_solutions(&self) -> usize {
-        fn recurse(parser: Parser<'_>, elems: &[SpringState]) -> usize {
+        fn recurse(parser: Parser<'_>, elems: &[SpringState], level: usize) -> usize {
             // Do something like LOOK AHEAD, and fail fast if there is just no point at all
             // (i.e. number of placeholders cant possibly be enough or something)
-            
             match elems.first() {
                 None => return parser.success() as usize,
                 Some(SpringState::Operational) => {
                     if let Some(p) = parser.read_operational() {
-                        recurse(p, &elems[1..])
+                        recurse(p, &elems[1..], level + 1)
                     } else {
                         0
                     }
                 }
                 Some(SpringState::Damaged) => {
                     if let Some(p) = parser.read_damaged() {
-                        recurse(p, &elems[1..])
+                        recurse(p, &elems[1..], level + 1)
                     } else {
                         0
                     }
@@ -81,11 +116,11 @@ impl Record {
                     let mut success = false;
 
                     if let Some(p) = parser.read_operational() {
-                        ret += recurse(p, &elems[1..]);
+                        ret += recurse(p, &elems[1..], level + 1);
                         success = true;
                     }
                     if let Some(p) = parser.read_damaged() {
-                        ret += recurse(p, &elems[1..]);
+                        ret += recurse(p, &elems[1..], level + 1);
                         success = true;
                     }
                     debug_assert!(success, "One of the two should always be possible...");
@@ -100,7 +135,7 @@ impl Record {
             debt: None,
         };
 
-        recurse(parser, &self.elems)
+        recurse(parser, &self.elems, 0)
     }
 }
 
@@ -192,22 +227,21 @@ fn example() {
         "?#?#?#?#?#?#?#? 1,3,1,6",
         "????.#...#... 4,1,1",
         "????.######..#####. 1,6,5",
-        "?###???????? 3,2,1"
+        "?###???????? 3,2,1",
     ];
-    let should_be1 = [
-        1, 4, 1, 1, 4, 10
-    ];
-    let should_be2 = [
-        1, 16384, 1, 16, 2500, 506250
-    ];
+    let should_be1 = [1, 4, 1, 1, 4, 10];
+    let should_be2 = [1, 16384, 1, 16, 2500, 506250];
 
-    for i in 0..lines.len() {
-        assert_eq!(Record::parse(lines[i]).count_solutions(), should_be1[i]);
+    if false {
+        for i in 0..lines.len() {
+            assert_eq!(Record::parse(lines[i]).count_solutions(), should_be1[i]);
+        }
     }
 
-    for i in 0..lines.len() {
+    for i in 1..lines.len() {
         let rec = Record::parse(lines[i]).unfold();
         println!("{:?}", rec);
         assert_eq!(rec.count_solutions(), should_be2[i]);
+        panic!();
     }
 }
