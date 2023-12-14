@@ -22,42 +22,6 @@ struct Record {
     signature: Vec<usize>,
 }
 
-#[derive(Debug, Clone)]
-struct SignatureParser {
-    signtaure: Vec<usize>,
-    damaged_run: Option<usize>,
-}
-
-impl SignatureParser {
-    fn read_operational(&mut self) {
-        if let Some(run) = self.damaged_run.take() {
-            self.signtaure.push(run);
-        }
-    }
-
-    fn read_damaged(&mut self) {
-        if let Some(run) = &mut self.damaged_run {
-            *run += 1;
-        } else {
-            self.damaged_run = Some(1)
-        };
-    }
-
-    fn could_match(&self, sig: &[usize]) -> bool {
-        if let Some(run) = self.damaged_run {
-            self.signtaure.len() < sig.len()
-                && self.signtaure == &sig[0..self.signtaure.len()]
-                && run <= sig[self.signtaure.len()]
-        } else {
-            self.signtaure.len() <= sig.len() && self.signtaure == &sig[0..self.signtaure.len()]
-        }
-    }
-
-    fn success(&self, sig: &[usize]) -> bool {
-        sig == self.signtaure
-    }
-}
-
 impl Record {
     fn unfold(&self) -> Self {
         let mut elems = Vec::new();
