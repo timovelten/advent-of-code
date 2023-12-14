@@ -33,17 +33,17 @@ fn main() -> crate::Result<()> {
 
     for (i, solver) in solvers.into_iter().enumerate() {
         let day = i + 1;
-        if ONLY_DAY.map(|x| x != day).unwrap_or(false) {
+        if ONLY_DAY.is_some_and(|x| x != day) {
             continue;
         }
-        println!("Day {}", day);
+        println!("Day {day}");
 
         let now = std::time::Instant::now();
         solver()?;
         let took = now.elapsed();
 
         println!("Took {} ms ({} ns)", took.as_millis(), took.as_nanos());
-        println!()
+        println!();
     }
 
     Ok(())
@@ -63,7 +63,7 @@ type Result<T> = std::result::Result<T, Error>;
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{:?}", self))
+        f.write_fmt(format_args!("{self:?}"))
     }
 }
 
